@@ -1,0 +1,10 @@
+# Processing temporary files
+*.class
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.idea/
+.vscode/
