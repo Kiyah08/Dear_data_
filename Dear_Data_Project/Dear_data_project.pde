@@ -1,135 +1,107 @@
 ArrayList<Star> stars = new ArrayList<Star>();
-// this list is because there is not a fixed number of stars
-int tick =0;
-//variable to count how many times the animation has progressed through it loop this is used so the program knows when to make another star
+int tick = 0;
 
-//Recording whether the menu is currently moving up
+// Menu and page controls these variables allow the pages to switch between themselves
 boolean transitioning = false;
-// recods weather the genres p[age should be displayed false is mainmenu and true is the genrespage
 boolean genresPage = false;
-//controls how far the main menu moves up
+boolean showAllPage = false;
 float menuOffsetY = 0;
 
-
-
-
-
-
-
-// Downloaded font from DaFont
+// Font used for title
 PFont titleFont;
 
-//Stores episodes from my CSV file
+// stores data from my CSV file
 ArrayList<Episode> episodes = new ArrayList<Episode>();
+Episode hoveredEpisode = null;
 
-// controlls which screen is displayed
-boolean showAllPage = false;
-
-// rotation and zoom in of 3d data display
+// this is used to control the rotation and zoom of my data on the show all page
 float rotationX = 0.3;
 float rotationY = 0;
 float zoom = 1.0;
-
-//stores the episode the mouse is hovering over
-Episode hoveredEpisode =null;
-
-//stores the episode title image
-PImage currentImage;
-
 float lastMouseX;
 float lastMouseY;
-boolean rotatingScene = false;
 
 void setup() {
   fullScreen(P3D);
   frameRate(30);
-  //makes shapes and lines more smooth
   smooth(8);
-  
+// loads the font for my heading
   titleFont = createFont("MatchaStyle.ttf", 50);
   textFont(titleFont);
-  
-  //loads episodes from spreadsheet
+// loads my episode datat when the sketch begins
   loadEpisodeData();
-  
-
 }
-// background
+
 void draw() {
-  //Night sky colour for background
+  // show all button has its own background and 3D scene seperate from menu
+  if (showAllPage) {
+    draw3DScene();
+    return;
+  }
+
+  // Night-sky background for the menu and genre page.
   background(30, 35, 55);
-  
-  // Creating a new star for every 8 frames if stars were not redraw it would leave trails and make the animation look unclean
-  if (tick % 8 ==0) {
+
+  // Create a new star every 8 frames for background effect
+  if (tick % 8 == 0) {
     stars.add(new Star());
+  }
 
-
-
-}
-
-// allow stars to update and remove them when they fall off screen
-
- // Update stars and remove those that leave the screen
+  // moves the stars down the screen and removes them when they have gone off screen
   for (int i = stars.size() - 1; i >= 0; i--) {
     Star star = stars.get(i);
-
     star.update();
 
-    // Remove stars that move offscreen
     if (star.y > height + 50) {
       stars.remove(i);
     }
   }
 
   tick++;
-    //checks which screen should be displayed 
-    if (showAllPage) {
-  draw3DScene();
-} else if (!genresPage) {
-  drawMenu();
-} else {
-  drawGenresPage();
-}
-   
-// makes text float upwards when transitioning is true 8 is subtracted
-//from the programs vetruicle offset each frame moving the screen upwards
+
+  // Move the menu upwards when the genres button is pressed
   if (transitioning) {
     menuOffsetY -= 8;
-    
-  if (menuOffsetY < -height) {
-    genresPage = true;
-    transitioning = false;
+
+    if (menuOffsetY < -height) {
+      genresPage = true;
+      transitioning = false;
+    }
   }
-}  
-  
-    
-    
-    
+
+  // shows the genres page after the menu has moved off screen
+  if (genresPage) {
+    drawGenresPage();
+  } else {
+    drawMenu();
+  }
 }
-// draws the main menu title, subtitle and begin button
+
+
+// main menu screen
+
 void drawMenu() {
-   pushMatrix();
-   //saves drawings transformation
-   // shifts down vertically
-   translate(0, menuOffsetY);
-   
-   //Title and its position
-   textAlign(CENTER, CENTER);
-   textFont(titleFont);
-   textSize(height * 0.075);
-   fill(255, 248, 166);
-   
-   text("KIYAH'S DEAR DATA", width * 0.5, height * 0.32);
-   
-   //subtitle
-   textSize(height * 0.027);
-   fill(255);
-   text("Anime Episode Visualisation", width * 0.5, height * 0.40);
-   
-   // GENRES button
+  pushMatrix();
+  // applies the vertical movement for the menu transition
+  translate(0, menuOffsetY);
+
+  textAlign(CENTER, CENTER);
+  textFont(titleFont);
+  textSize(height * 0.075);
+  fill(255, 248, 166);
+// main title
+  text("KIYAH'S DEAR DATA", width * 0.5, height * 0.32);
+
+  // Subtitle
+  textSize(height * 0.027);
+  fill(255);
+  text("Anime Episode Visualisation", width * 0.5, height * 0.40);
+// button dimensions change with screen size
   float buttonW = width * 0.18;
   float buttonH = height * 0.085;
   float buttonX = width * 0.5;
+
+  // genres button
   float genresY = height * 0.55;
 
   rectMode(CENTER);
@@ -143,7 +115,7 @@ void drawMenu() {
   textSize(height * 0.032);
   text("GENRES", buttonX, genresY);
 
-  // SHOW ALL button
+  // show all button
   float showAllY = height * 0.68;
 
   fill(40, 35, 80);
@@ -155,41 +127,37 @@ void drawMenu() {
   noStroke();
   text("SHOW ALL", buttonX, showAllY);
 
-  popMatrix(); 
-   
+  popMatrix();
 }
 
-// makes the genres page
+
+// genres selection page
 
 void drawGenresPage() {
-  // Circle positions across the landscape screen
+  // postion for six genre options
   float[] genreX = {
     width * 0.10, width * 0.26, width * 0.42,
     width * 0.58, width * 0.74, width * 0.90
   };
 
-  // Vertical positions of circles
   float[] genreY = {
     height * 0.48, height * 0.35, height * 0.53,
     height * 0.36, height * 0.53, height * 0.40
   };
-
-  // Genre names
+// names shown underneath symbol
   String[] genreNames = {
     "Fantasy", "Historical", "Psychological",
     "Sci-Fi", "Mystery", "Action"
   };
-
-  // Symbols for each genre
+// place holder for genre symbols for now i just put letters
   String[] genreSymbols = {
     "F", "H", "P", "S", "M", "A"
   };
-
-  // Circle size and radius
+// keeps circles proportinal to screens dimensions
   float circleSize = min(width * 0.115, height * 0.25);
   float circleRadius = circleSize / 2;
 
-  // Draw connecting constellation lines first
+  // Draw connecting lines before drawing the circlesso the lines don't overlap with buttons
   stroke(190, 190, 210, 180);
   strokeWeight(2);
 
@@ -198,13 +166,11 @@ void drawGenresPage() {
     float y1 = genreY[i];
     float x2 = genreX[i + 1];
     float y2 = genreY[i + 1];
-
-    // Direction between the circles
+// finds distance and direction between circles
     float dx = x2 - x1;
     float dy = y2 - y1;
     float distanceBetween = dist(x1, y1, x2, y2);
-
-    // Shorten the line so it stops at the circle edges
+// shortens line so it meets edge of circle
     float shortenX = dx / distanceBetween * circleRadius;
     float shortenY = dy / distanceBetween * circleRadius;
 
@@ -214,14 +180,14 @@ void drawGenresPage() {
     );
   }
 
-  // Heading
+  // Page heading
   textAlign(CENTER, CENTER);
   textFont(titleFont);
   textSize(height * 0.055);
   fill(255, 248, 166);
   text("CHOOSE A GENRE", width / 2, height * 0.14);
 
-  // Draw the circular genre buttons over the lines
+  // draws genre circles, letters and genre names
   for (int i = 0; i < genreNames.length; i++) {
     fill(40, 35, 80);
     stroke(255, 248, 166);
@@ -232,7 +198,7 @@ void drawGenresPage() {
       circleSize, circleSize
     );
 
-    // Symbol inside each circle
+    // Symbol
     fill(255, 248, 166);
     noStroke();
     textSize(circleSize * 0.35);
@@ -241,7 +207,7 @@ void drawGenresPage() {
       genreX[i], genreY[i] - circleSize * 0.12
     );
 
-    // Genre name underneath the symbol
+    // Genre name
     fill(255);
     textSize(height * 0.022);
     text(
@@ -251,94 +217,98 @@ void drawGenresPage() {
   }
 }
 
-// activates when begin buttopn is pressed with a mouse, 
+
+// mouse and the page controls
+
 void mousePressed() {
-  
-  
+  // remembers where the mouse has clickded so the dragging controls can figure out how far its moved
   lastMouseX = mouseX;
   lastMouseY = mouseY;
-  // If the 3D page is open, allow the Back button
+
+  // checks for a click on the back button when in the show all page
   if (showAllPage) {
-    if (mouseX < 130 && mouseY < 70) {
+    // coordinates match the position of back button
+    if (mouseX >= 20 && mouseX <= 120 &&
+        mouseY >= 20 && mouseY <= 60) {
       showAllPage = false;
       return;
     }
-
-    // Start rotating the 3D scene
+// ignore the rest of the menu buttons on the page
     return;
   }
 
-  // Main menu buttons
+  // Only allows the menu buttons to be clicked when the menu is showing and no transition is happening
   if (!transitioning && !genresPage) {
+    // use the same button sizes and positions is the drawMenu() method
     float buttonW = width * 0.18;
     float buttonH = height * 0.085;
     float buttonX = width * 0.5;
-
+// inclues the menus movement when checking the button position
     float genresY = height * 0.55 + menuOffsetY;
     float showAllY = height * 0.68 + menuOffsetY;
 
-    // Click GENRES
+    // checks if mouse is clicked within the genres button
     if (mouseX > buttonX - buttonW / 2 &&
         mouseX < buttonX + buttonW / 2 &&
         mouseY > genresY - buttonH / 2 &&
         mouseY < genresY + buttonH / 2) {
       transitioning = true;
-    }
+    }// if true the animation that moves the menu up starts playing
 
-    // Click SHOW ALL
+    // if not check is the show all button was pressed
     else if (mouseX > buttonX - buttonW / 2 &&
              mouseX < buttonX + buttonW / 2 &&
              mouseY > showAllY - buttonH / 2 &&
              mouseY < showAllY + buttonH / 2) {
       showAllPage = true;
-    }
+      stars.clear();
+    }// if yes open the 3d data visulisation and remove the star background
   }
 }
 
 void mouseDragged() {
+  // Dragging the mouse rotates the 3d visulisation
   if (showAllPage) {
+    // vertical movement changes the rotation around x axis and horizontal moves around y axis
     rotationY += (mouseX - lastMouseX) * 0.01;
     rotationX += (mouseY - lastMouseY) * 0.01;
   }
-
+// saves the current position so the next movement is mesures from there insteadoif the original click
   lastMouseX = mouseX;
   lastMouseY = mouseY;
 }
 
-void mouseReleased() {
-  rotatingScene = false;
-}
-
-
 void mouseWheel(processing.event.MouseEvent event) {
+  // gets the direction and amous on the mouse wheel movement
   float scroll = event.getCount();
-
-  // Scroll up to zoom in and down to zoom out
+// adjusts the zoom depending on how far the wheel moves
   zoom -= scroll * 0.1;
-
-  // Prevent the scene from becoming too tiny or too large
+  // keeos the zoom between 0.4 and 3 so the scene is not too big or small
   zoom = constrain(zoom, 0.4, 3.0);
 }
 
 
-void loadEpisodeData() {
-  Table data = loadTable("anime_data.csv", "header");
+// 
 
+void loadEpisodeData() {
+  //loads the CVS file and uses the first row as the column headings
+  Table data = loadTable("anime_data.csv", "header");
+// stop here if file can't be loaded
   if (data == null) {
-    println("ERROR: can't load anime_data.csv");
+    println("ERROR: Can't load anime_data.csv");
     return;
   }
-
+// print the number of rows found to checkthat the file has loaded
   println("Rows found: " + data.getRowCount());
-
+// go through each row to get the information for an episode
   for (TableRow row : data.rows()) {
     String title = row.getString("Title");
 
-    // Ignore empty rows
+    // Ignore empty rows.
     if (title == null || title.trim().isEmpty()) {
       continue;
     }
-
+// gets the episode details using these column names in the CVS file
     String genre = row.getString("Genre");
     String episodeNumber = row.getString("episode number");
     String durationText = row.getString("length of episode");
@@ -348,178 +318,153 @@ void loadEpisodeData() {
     String date = row.getString("Date watched");
     String watchedBefore = row.getString("Watched before");
     String imageName = row.getString("Image");
-
-    // Convert text into numbers
+// converts duration and ranking colums into numbers
     int duration = parseNumber(durationText);
     int ranking = parseNumber(rankingText);
-
-    // Create one episode from this spreadsheet row
+// creates an eppisode object using the information from this row
     Episode episode = new Episode(
       title, genre, episodeNumber, feeling, ranking,
       duration, memory, date, watchedBefore, imageName
     );
-
+// add the new episode to the list used in the visualisation
     episodes.add(episode);
-  } // Ends the for loop
-
-  println("Episodes loaded: " + episodes.size());
-} // Ends loadEpisodeData()
-  
-// removes non numeric characters 
-int ParseNumber(String value) {
-  if (value == null){
-    return 0;
   }
-  // keep only the digits
-  String digits = value.replaceAll("[^0-9","");
-  
+// print how many episodes were sucsessfully added
+  println("Episodes loaded: " + episodes.size());
+}
+
+
+// converts text into numbers so its easier for java to understand
+
+int parseNumber(String value) {
+  if (value == null) {
+    return 0;
+  }// returns zero if there is no value to convert
+// removes letters/ symbols only leaving digits
+  String digits = value.replaceAll("[^0-9]", "");
+// checks if there are digits left to convert
   if (digits.isEmpty()) {
     return 0;
   }
-  
-    return int(digits);
+// converts renmaining digits into a integer
+  return int(digits);
 }
 
 
+// STAR CLASS
 
+class Star {
+  // position, movement and rotation of star animation
+  float x;
+  float y;
+  float time;
+  float acceleration;
+  float angle;
+  float size;
+// eacxh star has its owm colour and fill style
+  int starColour;
+  boolean filled;
 
-//  Star Class
-  class Star {
-    float x;
-    float y;
-    float time;
-    float acceleration;
-    float angle;
-    float size;
-    
-    int starColour;
-    boolean filled;
-    /*star class describes what each star should contain and how it behaves, this will give eaach star variables when its created
-     such as the stars positions, angles, speed, colour and rotation */
- 
-//Constructor to setup new stars, runs automatically whenevever new star is made
-Star(){
-  x = random(width);
-  y = random(-200,-20);
-  time = 1;
-  angle = 0;
-  size = random(5, 12);
-  float spin = random (-5, 5);
-  
-  //star roatation
-  if (abs(spin) < 1) {  /* checks if spin value is less than 1 and abs makes sure negative numbers are turned into positives 
-  this makes sure no stars spin value is really low */
-    spin = 1;
-  
-  
-  }
-  
-  acceleration = spin;
-  
-      // Random colour palette for the stars
+  Star() {
+    // starts each star at a random posiy=tion above the screen
+    x = random(width);
+    y = random(-200, -20);
+    time = 1;
+    angle = 0;
+    size = random(5, 12);
+// gives the star a random spinning speed
+    float spin = random(-5, 5);
+// makes sure star dosen't spin too slowly
+    if (abs(spin) < 1) {
+      spin = 1;
+    }
+
+    acceleration = spin;
+// selection of colours for the stars to randomly choose
     int[] starColours = {
-      color(255, 248, 166), // yellow
-      color(255, 200, 100), //  orange
-      color(255, 170, 190), // pink
-      color(220, 180, 255), // Lavender
-      color(160, 210, 255), // blue
-      color(180, 255, 240), // Mint
-      color(255, 255, 255)  // White
+      color(255, 248, 166),
+      color(255, 200, 100),
+      color(255, 170, 190),
+      color(220, 180, 255),
+      color(160, 210, 255),
+      color(180, 255, 240),
+      color(255, 255, 255)
     };
-  
+// picks colour at random
     starColour = starColours[int(random(starColours.length))];
-    
-// this makes every star pick a random color when its made and makes it so the colour is consistant when the star is spinning and falling
-
-
-filled = random(1) > 0.5;
-//makes star randomly filled or outlined
-
-}
-
-
-  
-// making star shape
-void create(float cx, float cy) {
-  strokeWeight(3);
-  stroke(starColour);
-  strokeJoin(ROUND);
-  
-  if (filled) {
-    fill(starColour);
-  } else {
-    noFill();
-}
-  
-float rotation = -HALF_PI;
-float step = TWO_PI / 10;
-// two pi is a full circles radians so dividing it by ten places each point evenly around a circle 
-float outerRadius = 20;
-float innerRadius = 10;
-beginShape();  
-  
-// Alternating between outer and inner points
-for (int i = 0; i < 10; i++){
-  float radius;
-  
-  // even points use the outer radius and odd use the inner radius which creates the star shape
-  if (i % 2== 0) {
-    radius = outerRadius;
-  }else{
-    radius = innerRadius;
+    // randomly chooses if star is filled or only has a outline
+    filled = random(1) > 0.5;
   }
-  
-  float sx = cx + cos(rotation) * radius;
-  float sy= cy + sin(rotation) * radius;
-  //adds each point to shape
-  vertex(sx, sy);
-  
-  rotation += step;
+
+  // Draw the star shape using 10 alternating points
+  void create(float cx, float cy) {
+    strokeWeight(3);
+    stroke(starColour);
+    strokeJoin(ROUND);
+
+    if (filled) {
+      fill(starColour);
+    } else {
+      noFill();
+    }
+// alternate between the outer and inner points to create the five points stars have
+    float rotation = -HALF_PI;
+    float step = TWO_PI / 10;
+    float outerRadius = 20;
+    float innerRadius = 10;
+
+    beginShape();
+
+    for (int i = 0; i < 10; i++) {
+      float radius;
+// every other point uses the smaller radius
+      if (i % 2 == 0) {
+        radius = outerRadius;
+      } else {
+        radius = innerRadius;
+      }
+// calculates were next point shouldbe drawn
+      float sx = cx + cos(rotation) * radius;
+      float sy = cy + sin(rotation) * radius;
+
+      vertex(sx, sy);
+      rotation += step;
+    }
+
+    endShape(CLOSE);
   }
-// connects last point back to first
-  endShape(CLOSE);
-}
 
-// Animating stars
-void update() {
-  pushMatrix();
-  
-  //Move to the stars positiom
-  translate(x,y);
-  
-  //roatate stars. radians convers angle from degrees into radians it needs to be converted to allow starts to rotate while falling
-  rotate(radians(angle));
-  
-  //Change the size smoothly to create twinkling 
-  float starScale = map( //map conversts noise values into a scale between 0.2 and 1.0
-  noise(time * 0.01),
-  //  noise makes smoothly changing values instead of having the values jump randomly
-  0, 1,
-  0.2, 1.0
-);
-// makes star smaller or larger depending on value generated
-  scale(starScale);
+  // updates the stars apperance and movement for each frame
+  void update() {
+    pushMatrix();
+// moves to the stars position before rotating it
+    translate(x, y);
+    rotate(radians(angle));
+// use noise to make the star grown and shrink smoothly
+    float starScale = map(
+      noise(time * 0.01),
+      0, 1,
+      0.2, 1.0
+    );
 
-// draw the star around its centere
-   create(0, 0);
-   popMatrix();
-   
-   // allow star to move down the screen
-   y += time * 0.01;
+    scale(starScale);
+    create(0, 0);
 
-// increase speed over time
-  time += abs(acceleration);
-  
-  //rotate
-  angle += acceleration;
-
+    popMatrix();
+// moves the star down and updates it rotation
+    y += time * 0.01;
+    time += abs(acceleration);
+    angle += acceleration;
   }
 }
-    
+
+
+// Episode class
+// information about each episode from my CVS file
 class Episode {
   String title;
   String genre;
-   String episodeNumber;
+  String episodeNumber;
   String feeling;
   String memory;
   String dateWatched;
@@ -527,26 +472,28 @@ class Episode {
 
   int ranking;
   int duration;
-
+// values used to arrange the episodes in 3D
   float angle;
   float distance;
   float bubbleSize;
-
+// screen position of the spere used when checking the mouse
   float xScreen;
   float yScreen;
   float zScreen;
   float verticalPosition;
+// colours are based on the genre and the recorded fellings are the glow
   color genreColour;
   color glowColour;
-
+// stores the episode image
   PImage animeImage;
-  
+
   Episode(
     String title, String genre, String episodeNumber,
     String feeling, int ranking, int duration,
     String memory, String dateWatched,
     String watchedBefore, String imageName
   ) {
+    //save the information passed into the constructor
     this.title = title;
     this.genre = genre;
     this.episodeNumber = episodeNumber;
@@ -557,48 +504,46 @@ class Episode {
     this.dateWatched = dateWatched;
     this.watchedBefore = watchedBefore;
 
-     // Spread episodes around the centre in a spiral
-  angle = episodes.size() * 2.399963f;
-  
-  // Increase the distance from the centre for each new episode
-  distance = 65 + 34 * sqrt(episodes.size());
-  
-  // Give each episode a stable vertical position
-  verticalPosition = random(-100, 100);
-  
-  // Ranking determines the circle size
-  bubbleSize = map(constrain(ranking, 1, 10), 1, 10, 10, 32);
+    // Arrange episodes in a spiral.
+    angle = episodes.size() * 2.399963f;
+    distance = 65 + 34 * sqrt(episodes.size());
+    // adds vertical variation so the sheres aren't all level
+    verticalPosition = random(-100, 100);
 
-    // Choose colours from the spreadsheet values
+    // uses ranking to determain size of the sphere from 1-10
+    bubbleSize = map(
+      constrain(ranking, 1, 10),
+      1, 10,
+      10, 32
+    );
+// choses colours using episodes genre and feeliing
     genreColour = getGenreColour(genre);
     glowColour = getFeelingColour(feeling);
 
-    // Load the optional image from data/images
+    // Load an image from data/images.
     if (imageName != null && !imageName.trim().isEmpty()) {
       animeImage = loadImage("images/" + imageName.trim());
-
-     if (animeImage == null) {
+// prints a message if the image couldn't be found
+      if (animeImage == null) {
         println("Image not found: " + imageName);
       }
     }
-  } // Ends the Episode constructor
-
+  }
+// 
   void display() {
-    // Duration controls distance from centre
+    // calculates sheres position using its angle and distance
     float x = cos(angle) * distance;
     float z = sin(angle) * distance;
-
     float y = verticalPosition;
 
     pushMatrix();
     translate(x, y, z);
-
-    // Decide how strong the glow should be
+// memrobility effects strength of glow
     float glowStrength = getMemoryScore(memory) * 12;
 
     noStroke();
 
-    // Draw three transparent layers around the sphere
+    // Transparent glow layers.
     for (int i = 3; i >= 1; i--) {
       fill(
         red(glowColour),
@@ -610,8 +555,7 @@ class Episode {
       sphere(bubbleSize + i * 5);
     }
 
-    // Main sphere uses the genre colour
-      // Main sphere is fully solid
+    // draw main shere using genre colours
     noStroke();
     fill(
       red(genreColour),
@@ -621,76 +565,91 @@ class Episode {
     );
     sphere(bubbleSize);
 
-    // Add a ring if the episode was watched before
+    // Add a ring if the episode was watched before.
     if (watchedBefore != null &&
         watchedBefore.trim().equalsIgnoreCase("Y")) {
       noFill();
       stroke(255, 245, 180);
-      strokeWeight(2);
+      strokeWeight(12);
       sphere(bubbleSize + 3);
       noStroke();
     }
 
-    // Record the sphere's screen position for hovering
+    // Store the sphere's screen position so the program can detect when the mouse is hovering over it
     xScreen = screenX(0, 0, 0);
     yScreen = screenY(0, 0, 0);
     zScreen = screenZ(0, 0, 0);
-
+// estimate the sphers size on screen and takes zoom into account
     float screenRadius = bubbleSize * zoom;
-
-    if (dist(mouseX, mouseY, xScreen, yScreen)
-        < screenRadius + 6 && zScreen < 1) {
+// checks if mouse is close enought to the sphere and if the shere is withing the visable depth range
+    if (dist(mouseX, mouseY, xScreen, yScreen) < screenRadius + 6
+        && zScreen < 1) {
+          // saves this episode so its information can be displayes
       hoveredEpisode = this;
     }
-
+// restore the previous drawing settings
     popMatrix();
 
-    // Slowly rotate the sphere's position around the centre
+    // Slowly rotate each episode around the centre.
     angle += 0.002;
   }
 }
 
-int getMemoryScore(String memory) {
-  if (memory == null) return 5;
 
+// MEMORABILITY SCORE
+
+int getMemoryScore(String memory) {
+  // uses a middle score if no memrobility value is provided
+  if (memory == null) {
+    return 5;
+  }
+// converts awner to lowercase and removes extra spaces
   String value = memory.toLowerCase().trim();
 
   if (value.equals("slightly")) return 3;
   if (value.equals("moderate")) return 5;
   if (value.equals("very")) return 8;
   if (value.equals("unforgettable")) return 10;
-
+// return defult score if the awwnser does not match any option
   return 5;
 }
-   
+
+
+// GENRE COLOURS
+
 color getGenreColour(String genre) {
-  if (genre == null) return color(175, 170, 190);
-  
+  // returns a netural colour if genre is missing
+  if (genre == null) {
+    return color(175, 170, 190);
+  }
+// converts the genre into lowercase
   String g = genre.toLowerCase();
-  
+// assign diffrent colours baseed on genre, alternate versions of a specific genre like dark fantasy will be a darker or lighter colour then the broader genre
   if (g.contains("dark fantasy")) return color(90, 45, 130);
   if (g.contains("fantasy")) return color(175, 110, 225);
-   if (g.contains("historical")) return color(235, 185, 80);
+  if (g.contains("historical")) return color(235, 185, 80);
   if (g.contains("action")) return color(245, 90, 100);
   if (g.contains("drama")) return color(90, 150, 255);
-  if (g.contains("sci-fi") || g.contains("sci fi")) return color(70, 220, 220);
+  if (g.contains("sci-fi") || g.contains("sci fi")) {
+    return color(70, 220, 220);
+  }
+  // allows two diffrent ways to write sci fi
   if (g.contains("mystery")) return color(255, 140, 100);
-
+// uses netural colour if genre is not recognised
   return color(170, 170, 190);
-
-
-
-
-
-
-
 }
 
+
+// FEELING COLOURS
+
 color getFeelingColour(String feeling) {
-  if (feeling == null) return color(170, 175, 195);
-
+  // return netural colour if no feeling is recorded
+  if (feeling == null) {
+    return color(170, 175, 195);
+  }
+// convert into lowercase
   String f = feeling.toLowerCase();
-
+// if two feelings are mentioned blend the colours
   if (f.contains("tense") && f.contains("excited")) {
     return lerpColor(
       color(255, 55, 75),
@@ -714,7 +673,7 @@ color getFeelingColour(String feeling) {
       0.5
     );
   }
-
+// assign colours when one feeling is found
   if (f.contains("excited")) return color(255, 135, 35);
   if (f.contains("sad")) return color(65, 120, 255);
   if (f.contains("tense")) return color(255, 55, 75);
@@ -725,55 +684,29 @@ color getFeelingColour(String feeling) {
   return color(170, 175, 195);
 }
 
-int parseNumber(String value) {
-  if (value == null) {
-    return 0;
-  }
 
-  // Remove words and symbols, leaving only digits
-  String digits = value.replaceAll("[^0-9]", "");
-
-  if (digits.isEmpty()) {
-    return 0;
-  }
-
-  return int(digits);
-}
-
+// Show 3d data page
 
 void draw3DScene() {
+  // Plain background: no animated stars on this page.
   background(12, 15, 30);
 
   camera();
   lights();
 
-  // Draw stars first, behind the episode spheres
-  hint(DISABLE_DEPTH_TEST);
-  for (Star star : stars) {
-    star.create(star.x, star.y);
-  }
-  hint(ENABLE_DEPTH_TEST);
-
-  // Draw the 3D episode scene afterwards
+  // Position and rotate the episode arrangement.
   pushMatrix();
   translate(width / 2, height / 2, 0);
   scale(zoom);
   rotateX(rotationX);
   rotateY(rotationY);
 
-  // Centre and rotate the episode arrangement
-  pushMatrix();
-  translate(width / 2, height / 2, 0);
-  scale(zoom);
-  rotateX(rotationX);
-  rotateY(rotationY);
-
-  // Draw a placeholder for the central character
+  // Placeholder for the central character.
   noStroke();
   fill(240, 205, 235);
   sphere(45);
 
-  // Draw every episode loaded from the CSV
+  // Draw all episodes from the CSV.
   hoveredEpisode = null;
 
   for (Episode e : episodes) {
@@ -782,16 +715,21 @@ void draw3DScene() {
 
   popMatrix();
 
+  // Draw the information panel and Back button over the 3D scene.
   drawEpisodeInfo();
   drawBackButton();
 }
 
+
+// EPISODE INFORMATION PANEL
+
 void drawEpisodeInfo() {
-  if (hoveredEpisode == null) return;
+  if (hoveredEpisode == null) {
+    return;
+  }
 
   Episode e = hoveredEpisode;
 
-  // Switch back to screen-based drawing for the panel
   camera();
   hint(DISABLE_DEPTH_TEST);
 
@@ -811,7 +749,7 @@ void drawEpisodeInfo() {
   textSize(22);
   text(e.title, panelX + 15, panelY + 15, panelW - 30, 50);
 
-  // Display the anime image, if one was loaded
+  // Display the anime image if one was loaded.
   float imageX = panelX + 15;
   float imageY = panelY + 75;
   float imageW = panelW - 30;
@@ -840,6 +778,7 @@ void drawEpisodeInfo() {
 
   fill(255);
   textFont(createFont("SansSerif", 14));
+
   text(
     "Episode: " + e.episodeNumber +
     "\nGenre: " + e.genre +
@@ -853,8 +792,10 @@ void drawEpisodeInfo() {
   );
 
   hint(ENABLE_DEPTH_TEST);
-  
 }
+
+
+// BACK BUTTON
 
 void drawBackButton() {
   camera();
