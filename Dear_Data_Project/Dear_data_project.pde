@@ -701,7 +701,7 @@ void draw3DScene() {
   rotateX(rotationX);
   rotateY(rotationY);
 
-  // Placeholder for the central character.
+ 
   noStroke();
   fill(240, 205, 235);
   sphere(45);
@@ -721,24 +721,27 @@ void draw3DScene() {
 }
 
 
-// EPISODE INFORMATION PANEL
+// Episode info panels
 
 void drawEpisodeInfo() {
+  //checks if the mouse is hovering over an episode sphere if its not the infromation won't be displayed
   if (hoveredEpisode == null) {
     return;
   }
-
+// stores the episode being hovered over in a short variable so information can be accessed more easily
   Episode e = hoveredEpisode;
-
+// resets the camera so the information stays in the smae place instead of moving with the 3D scene
   camera();
+  // disabes depth testing so panel is on top of 3d scene
   hint(DISABLE_DEPTH_TEST);
-
+// sets position and size of info panel
   float panelX = width - 340;
   float panelY = 35;
   float panelW = 305;
   float panelH = 390;
-
+// makes the panel drawn fromm the top left corner
   rectMode(CORNER);
+  // panel information appearance
   noStroke();
   fill(35, 35, 65, 235);
   rect(panelX, panelY, panelW, panelH, 15);
@@ -749,18 +752,19 @@ void drawEpisodeInfo() {
   textSize(22);
   text(e.title, panelX + 15, panelY + 15, panelW - 30, 50);
 
-  // Display the anime image if one was loaded.
+  // Display the anime image if one was loaded and sets its position and size
   float imageX = panelX + 15;
   float imageY = panelY + 75;
   float imageW = panelW - 30;
   float imageH = 120;
-
+// checks if image was sucessfully loaded for anime
   if (e.animeImage != null) {
+    // works out how much the image needs to be resized so it fits within the panel space without stretching
     float ratio = min(
       imageW / e.animeImage.width,
       imageH / e.animeImage.height
     );
-
+// places image using its centre to make it easier to position the image in the middle of the panel
     imageMode(CENTER);
     image(
       e.animeImage,
@@ -769,16 +773,19 @@ void drawEpisodeInfo() {
       e.animeImage.width * ratio,
       e.animeImage.height * ratio
     );
+    // changes the image position back to defult so other images are not affected
     imageMode(CORNER);
   } else {
+    // if no image is available display message instead
     fill(180, 180, 205);
     textFont(createFont("SansSerif", 14));
     text("No image loaded", imageX, imageY + 50);
   }
-
+// text colour and font for information
   fill(255);
   textFont(createFont("SansSerif", 14));
-
+// displays all the episode infromation in the info panel
+//+ joins the labels with the values from the CSV and  \n moves each piece of information onto a new line.
   text(
     "Episode: " + e.episodeNumber +
     "\nGenre: " + e.genre +
@@ -790,28 +797,30 @@ void drawEpisodeInfo() {
     "\nWatched before: " + e.watchedBefore,
     panelX + 15, panelY + 210
   );
-
+// depth testing is turn3d back on to not effect the 3d scene
   hint(ENABLE_DEPTH_TEST);
 }
 
 
-// BACK BUTTON
+// Back button
 
 void drawBackButton() {
+  // resets camera so the button stays in one position 
   camera();
+  // disables depth testing so button is ontop of 3D scene
   hint(DISABLE_DEPTH_TEST);
-
+// shape and position of button
   rectMode(CORNER);
   fill(40, 35, 80);
   stroke(255, 248, 166);
   strokeWeight(2);
   rect(20, 20, 100, 40, 10);
-
+// adds BACK text in centre of button
   fill(255);
   noStroke();
   textAlign(CENTER, CENTER);
   textFont(createFont("SansSerif", 16));
   text("BACK", 70, 40);
-
+// re enables depth testing after button is drawn
   hint(ENABLE_DEPTH_TEST);
 }
