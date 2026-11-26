@@ -1,25 +1,25 @@
-ArrayList<Star> stars = new ArrayList<Star>();
-int tick = 0;
-
-// Menu and page controls these variables allow the pages to switch between themselves
-boolean transitioning = false;
-boolean genresPage = false;
-boolean showAllPage = false;
-float menuOffsetY = 0;
-
-// Font used for title
-PFont titleFont;
-
-// stores data from my CSV file
-ArrayList<Episode> episodes = new ArrayList<Episode>();
-Episode hoveredEpisode = null;
-
-// this is used to control the rotation and zoom of my data on the show all page
-float rotationX = 0.3;
-float rotationY = 0;
-float zoom = 1.0;
-float lastMouseX;
-float lastMouseY;
+  ArrayList<Star> stars = new ArrayList<Star>();
+  int tick = 0;
+  
+  // Menu and page controls these variables allow the pages to switch between themselves
+  boolean transitioning = false;
+  boolean genresPage = false;
+  boolean showAllPage = false;
+  float menuOffsetY = 0;
+  
+  // Font used for title
+  PFont titleFont;
+  
+  // stores data from my CSV file
+  ArrayList<Episode> episodes = new ArrayList<Episode>();
+  Episode hoveredEpisode = null;
+  
+  // this is used to control the rotation and zoom of my data on the show all page
+  float rotationX = 0.3;
+  float rotationY = 0;
+  float zoom = 1.0;
+  float lastMouseX;
+  float lastMouseY;
 
 void setup() {
   fullScreen(P3D);
@@ -470,8 +470,11 @@ class Episode {
   String dateWatched;
   String watchedBefore;
 
-  int ranking;
+   int ranking;
   int duration;
+  
+  // Stores the memorability score for this episode.
+  int memoryScore;
 // values used to arrange the episodes in 3D
   float angle;
   float distance;
@@ -483,6 +486,8 @@ class Episode {
   float verticalPosition;
 // colours are based on the genre and the recorded fellings are the glow
   color genreColour;
+  // Genre colour is used for the outside of the sphere, while glowColour
+  // is used for the feeling effect insid it.
   color glowColour;
 // stores the episode image
   PImage animeImage;
@@ -501,6 +506,8 @@ class Episode {
     this.ranking = ranking;
     this.duration = duration;
     this.memory = memory;
+    // Convert the memorability answer into a numerical score.
+    memoryScore = getMemoryScore(memory);
     this.dateWatched = dateWatched;
     this.watchedBefore = watchedBefore;
 
@@ -516,89 +523,132 @@ class Episode {
       1, 10,
       10, 32
     );
-// choses colours using episodes genre and feeliing
+  // choses colours using episodes genre and feeliing
     genreColour = getGenreColour(genre);
     glowColour = getFeelingColour(feeling);
 
     // Load an image from data/images.
     if (imageName != null && !imageName.trim().isEmpty()) {
       animeImage = loadImage("images/" + imageName.trim());
-// prints a message if the image couldn't be found
+    // prints a message if the image couldn't be found
       if (animeImage == null) {
         println("Image not found: " + imageName);
       }
     }
   }
-// 
+  // Draws each episode as a 3D sphere, with different visual effects
+  // to show the information collected about it.
   void display() {
-    // calculates sheres position using its angle and distance
-    float x = cos(angle) * distance;
-    float z = sin(angle) * distance;
-    float y = verticalPosition;
+  float x = cos(angle) * distance;
+  float z = sin(angle) * distance;
+  float y = verticalPosition;
 
-    pushMatrix();
-    translate(x, y, z);
-// memrobility effects strength of glow
-    float glowStrength = getMemoryScore(memory) * 12;
+  pushMatrix();
+  translate(x, y, z);
 
+ // Adds a thin gold ring around episodes I have watched more than once.
+  if (watchedBefore != null && watchedBefore.trim().equalsIgnoreCase("Y")) {
     noStroke();
+    fill(170, 140, 100, 110);
 
-    // Transparent glow layers.
-    for (int i = 3; i >= 1; i--) {
-      fill(
-        red(glowColour),
-        green(glowColour),
-        blue(glowColour),
-        glowStrength / i
+    float innerRadius = bubbleSize + 9;
+    float outerRadius = bubbleSize + 10;
+
+    beginShape(QUAD_STRIP);
+    for (int i = 0; i <= 100; i++) {
+      float a = TWO_PI * i / 100;
+      vertex(cos(a) * innerRadius, sin(a) * innerRadius, 0);
+      vertex(cos(a) * outerRadius, sin(a) * outerRadius, 0);
+    }
+    endShape();
+  }
+
+  // The outer sphere uses the genre colour, with transparency so the
+  // feeling effect inside the sphere can still be seen.
+  noStroke();
+  fill(red(genreColour), green(genreColour), blue(genreColour), 100);
+  sphere(bubbleSize);
+
+  // Creates a coloured glow inside the sphere to represent how I felt
+  // about the episode. The larger transparent sphere gives it a softer effect.
+  hint(DISABLE_DEPTH_TEST);
+
+  fill(red(glowColour), green(glowColour), blue(glowColour), 65);
+  sphere(bubbleSize * 0.65);
+
+  fill(red(glowColour), green(glowColour), blue(glowColour), 255);
+  sphere(bubbleSize * 0.32);
+    
+  // Temporarily disables depth testing so the inner glow remains visible
+  // through the outer sphere.
+  hint(ENABLE_DEPTH_TEST);
+
+  // Uses a ring of 10 separate parts to show how memorable each episode was.
+  // The number of gold parts depends on the memorability score.
+  int litParts = constrain(memoryScore, 0, 10);
+  float orbitRadius = bubbleSize + 4;
+  float orbitThickness = 1.2;
+
+  // Tilts the ring slightly so it looks like an orbit around the sphere.
+  pushMatrix();
+  rotateX(radians(65));
+  rotateY(radians(20));
+
+  for (int i = 0; i < 10; i++) {
+    float startAngle = TWO_PI * i / 10 + 0.055;
+    float endAngle = TWO_PI * (i + 1) / 10 - 0.055;
+
+    if (i < litParts) {
+      fill(220, 190, 120);
+    } else {
+      fill(65, 60, 85);
+    }
+
+    beginShape(QUAD_STRIP);
+    for (int j = 0; j <= 12; j++) {
+      float a = lerp(startAngle, endAngle, j / 12.0);
+
+      vertex(
+        cos(a) * (orbitRadius - orbitThickness),
+        sin(a) * (orbitRadius - orbitThickness),
+        0
       );
 
-      sphere(bubbleSize + i * 5);
+      vertex(
+        cos(a) * (orbitRadius + orbitThickness),
+        sin(a) * (orbitRadius + orbitThickness),
+        0
+      );
     }
-
-    // draw main shere using genre colours
-    noStroke();
-    fill(
-      red(genreColour),
-      green(genreColour),
-      blue(genreColour),
-      255
-    );
-    sphere(bubbleSize);
-
-    // Add a ring if the episode was watched before.
-    if (watchedBefore != null &&
-        watchedBefore.trim().equalsIgnoreCase("Y")) {
-      noFill();
-      stroke(255, 245, 180);
-      strokeWeight(12);
-      sphere(bubbleSize + 3);
-      noStroke();
-    }
-
-    // Store the sphere's screen position so the program can detect when the mouse is hovering over it
-    xScreen = screenX(0, 0, 0);
-    yScreen = screenY(0, 0, 0);
-    zScreen = screenZ(0, 0, 0);
-// estimate the sphers size on screen and takes zoom into account
-    float screenRadius = bubbleSize * zoom;
-// checks if mouse is close enought to the sphere and if the shere is withing the visable depth range
-    if (dist(mouseX, mouseY, xScreen, yScreen) < screenRadius + 6
-        && zScreen < 1) {
-          // saves this episode so its information can be displayes
-      hoveredEpisode = this;
-    }
-// restore the previous drawing settings
-    popMatrix();
-
-    // Slowly rotate each episode around the centre.
-    angle += 0.002;
+    endShape();
   }
-}
+
+  popMatrix();
+
+  // Detect when the mouse is over an episode
+  xScreen = screenX(0, 0, 0);
+  yScreen = screenY(0, 0, 0);
+  zScreen = screenZ(0, 0, 0);
+
+  float screenRadius = bubbleSize * zoom;
+
+  if (dist(mouseX, mouseY, xScreen, yScreen) < screenRadius + 6
+      && zScreen < 1) {
+    hoveredEpisode = this;
+  }
+
+  popMatrix();
+  angle += 0.002;
+    }
+  }
 
 
-// MEMORABILITY SCORE
+// Memrobility score
 
+// Changes the written answers from my CSV into numbers so they can
+// be displayed as different amounts of gold on the memorability ring
 int getMemoryScore(String memory) {
+  
   // uses a middle score if no memrobility value is provided
   if (memory == null) {
     return 5;
@@ -615,7 +665,7 @@ int getMemoryScore(String memory) {
 }
 
 
-// GENRE COLOURS
+// Genres colour
 
 color getGenreColour(String genre) {
   // returns a netural colour if genre is missing
@@ -640,7 +690,7 @@ color getGenreColour(String genre) {
 }
 
 
-// FEELING COLOURS
+// Feelings colour
 
 color getFeelingColour(String feeling) {
   // return netural colour if no feeling is recorded
@@ -701,7 +751,7 @@ void draw3DScene() {
   rotateX(rotationX);
   rotateY(rotationY);
 
- 
+ // Central sphere acts as a visual centre point for the episode arrangement.
   noStroke();
   fill(240, 205, 235);
   sphere(45);
@@ -776,7 +826,7 @@ void drawEpisodeInfo() {
     // changes the image position back to defult so other images are not affected
     imageMode(CORNER);
   } else {
-    // if no image is available display message instead
+    
     fill(180, 180, 205);
     textFont(createFont("SansSerif", 14));
     text("No image loaded", imageX, imageY + 50);
@@ -784,8 +834,9 @@ void drawEpisodeInfo() {
 // text colour and font for information
   fill(255);
   textFont(createFont("SansSerif", 14));
+  
 // displays all the episode infromation in the info panel
-//+ joins the labels with the values from the CSV and  \n moves each piece of information onto a new line.
+
   text(
     "Episode: " + e.episodeNumber +
     "\nGenre: " + e.genre +
